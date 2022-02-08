@@ -188,10 +188,12 @@ public:
 	}
 };
 
-VOID OnPaint(HDC hdc,point2D startPoint, point2D endPoint)
+void print(HWND hWnd, Color color);
+
+VOID OnPaint(HDC hdc,point2D startPoint, point2D endPoint, Color color)
 {
 	Graphics graphics(hdc);
-	Pen      pen(Color(255, 0, 0, 0));
+	Pen      pen(color);
 	graphics.DrawLine(&pen, startPoint.get(0), startPoint.get(1), endPoint.get(0), endPoint.get(1));
 }
 
@@ -201,7 +203,6 @@ int path[23] = { 0,1,0,2,0,3,4,3,5,3,6,7,6,8,6,9,10,9,11,9,12,13,14 };
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 {
-	affinsMatrix2D affins;
 	picture.add(point2D(width /2,100));
 	picture.add(point2D(width /2-25,125));
 	picture.add(point2D(width /2+25,125));
@@ -221,10 +222,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 	picture.add(point2D(width / 2, 400));
 	picture.add(point2D(width / 2 - 50, 400));
 	picture.add(point2D(width / 2 + 50, 400));
-
-	affins.scaling(2,2);
-
-	picture = picture * affins;
 
 	HWND                hWnd;
 	MSG                 msg;
@@ -254,8 +251,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 		WS_OVERLAPPEDWINDOW,      // window style
 		CW_USEDEFAULT,            // initial x position
 		CW_USEDEFAULT,            // initial y position
-		width,            // initial x size
-		height,            // initial y size
+		width,					  // initial x size
+		height,					  // initial y size
 		NULL,                     // parent window handle
 		NULL,                     // window menu handle
 		hInstance,                // program instance handle
@@ -272,22 +269,58 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 
 	GdiplusShutdown(gdiplusToken);
 	return msg.wParam;
-}  // WinMain
+} 
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 	WPARAM wParam, LPARAM lParam)
 {
 	HDC          hdc;
 	PAINTSTRUCT  ps;
-
+	affinsMatrix2D affins;
 	switch (message)
 	{
-	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		for (int i = 0; i < 22; i++) {
- 			OnPaint(hdc,picture.getPoint(path[i]),picture.getPoint(path[i+1]));
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case 87:
+			affins.move_on(0,-1);
+			break;
+		case 83:
+			affins.move_on(0, 1);
+			break;
+		case 65:
+			affins.move_on(-1, 0);
+			break;
+		case 68:
+			affins.move_on(1, 0);
+			break;
+		case 81:
+			affins.rotate(1);
+			break;
+		case 69:
+			affins.rotate(-1);
+			break;
+		case 33:
+			affins.scaling(0.95,1);
+			break;
+		case 34:
+			affins.scaling(1.05, 1);
+			break;
+		case 36:
+			affins.scaling(1, 0.95);
+			break;
+		case 35:
+			affins.scaling(1, 1.05);
+			break;
+		default:
+			break;
 		}
-		EndPaint(hWnd, &ps);
+		print(hWnd, Color(255, 255, 255, 255));
+		picture = picture * affins;
+		print(hWnd, Color(255, 0, 0, 0));
+		return 0;
+	case WM_PAINT:
+		print(hWnd, Color(255, 0, 0, 0));
 		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -295,4 +328,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
-} // WndProc
+}
+
+void print(HWND hWnd, Color color) {
+	HDC hdc = GetDC(hWnd);
+	for (int i = 0; i < 22; i++) {
+		OnPaint(hdc, picture.getPoint(path[i]), picture.getPoint(path[i + 1]), color);
+	}
+	ReleaseDC(hWnd, hdc);
+}
