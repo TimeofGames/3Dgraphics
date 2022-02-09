@@ -16,6 +16,8 @@ class affinsMatrix2D {
 private:
 	float matrix[3][3];
 	float** retMatrix;
+	int affinsType;
+
 	void reloadMatrix() {
 		for (int i = 0; i < 3; i++ ) {
 			for (int j = 0; j < 3; j++ ) {
@@ -46,22 +48,28 @@ public:
 		matrix[1][1] = cos(angle);
 		matrix[0][1] = sin(angle);
 		matrix[1][0] = -sin(angle);
+		affinsType = 2;
 	}
 	void move_on(int x = 0, int y = 0) {
 		this->reloadMatrix();
 		matrix[0][2] = x;
 		matrix[1][2] = y;
+		affinsType = 0;
 	}
 	void scaling(float multuX = 1, float multuY = 1) {
 		this->reloadMatrix();
 		matrix[0][0] = 1/multuX;
 		matrix[1][1] = 1/multuY;
+		affinsType = 1;
 	}
 	float** getMatrix() {
 		for (int i = 0; i<3; i++) {
 			for (int j = 0; j<3; j++) {retMatrix[i][j] = matrix[i][j];}
 		}
 		return retMatrix;
+	}
+	int getType() {
+		return affinsType;
 	}
 };
 
@@ -84,15 +92,15 @@ class point2D {
 private:
 	float x, y, z;
 public:
-	point2D(float x, float y) {
-		this->x = x;
-		this->y = y;
-		this->z = 1;
-	}
 	point2D() {
 		this->x = 1;
 		this->y = 1;
 		this->z = 1;
+	}
+	point2D(float x, float y, float z = 1) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
 	}
 	float get(int i) {
 		switch (i)
@@ -113,9 +121,10 @@ public:
 		{
 		case 0:
 			x = arg;
-
+			break;
 		case 1:
 			y = arg;
+			break;
 		default:
 			break;
 		}
@@ -139,6 +148,23 @@ private:
 	point2D* pointArray;
 	int realSize;
 	int maxSize;
+	float xMin = INFINITY;
+	float yMin = INFINITY;
+	float xMax = -INFINITY;
+	float yMax = -INFINITY;
+	point2D center;
+
+	void checkBorders(point2D point) {
+		if (point.get(0) < xMin) { xMin = point.get(0); }
+		if (point.get(0) > xMax) { xMax = point.get(0); }
+		if (point.get(1) < yMin) { yMin = point.get(1); }
+		if (point.get(1) > yMax) { yMax = point.get(1); }
+	}
+
+	void setCenter() {
+		center = point2D(((xMax + xMin) / 2), ((yMax + yMin) / 2), 1);
+	}
+
 public:
 	point2DArray(int size) {
 		this->maxSize = size;
@@ -148,19 +174,60 @@ public:
 	point2DArray operator *(affinsMatrix2D inputMatrix) {
 		point2DArray result = point2DArray(maxSize);
 		float** matrix = inputMatrix.getMatrix();
-
-		for (int i = 0;i < realSize;i++) {
-			point2D localPoint;
+		switch (inputMatrix.getType())
+		{
+		case 0:
+			for (int i = 0;i < realSize;i++) {
+				point2D localPoint;
+				for (int j = 0;j < 3;j++) {
+					float localResult = 0;
+					for (int k = 0;k < 3;k++) {
+						localResult += pointArray[i].get(k) * matrix[j][k];
+					}
+					localPoint.set(j, localResult);
+				}
+				result.add(localPoint);
+			}
 			for (int j = 0;j < 3;j++) {
 				float localResult = 0;
 				for (int k = 0;k < 3;k++) {
-					localResult += pointArray[i].get(k) * matrix[j][k];
+					localResult += center.get(k) * matrix[j][k];
 				}
-				localPoint.set(j, localResult);
+				center.set(j, localResult);
 			}
-			result.add(localPoint);
+			return result;
+		case 1:
+			for (int i = 0;i < realSize;i++) {
+				point2D localPoint;
+				for (int j = 0;j < 3;j++) {
+					float localResult = 0;
+					for (int k = 0;k < 3;k++) {
+						localResult += (pointArray[i].get(k) - center.get(k)) * matrix[j][k];
+					}
+					localResult += center.get(j);
+					localPoint.set(j, localResult);
+				}
+				result.add(localPoint);
+			}
+			return result;
+		case 2:
+
+			for (int i = 0;i < realSize;i++) {
+				point2D localPoint;
+				for (int j = 0;j < 3;j++) {
+					float localResult = 0;
+					for (int k = 0;k < 3;k++) {
+						localResult += (pointArray[i].get(k) - center.get(k)) * matrix[j][k];
+					}
+					localResult += center.get(j);
+					localPoint.set(j, localResult);
+				}
+				result.add(localPoint);
+			}
+			return result;
+		default:
+			break;
 		}
-		return result;
 	}
 	void add(point2D point) { //переделать
 		if (maxSize == realSize) {
@@ -168,6 +235,8 @@ public:
 		}
 		else {
 			pointArray[realSize] = point;
+			checkBorders(point);
+			setCenter();
 			realSize++;
 		}
 	}
@@ -194,7 +263,7 @@ VOID OnPaint(HDC hdc,point2D startPoint, point2D endPoint, Color color)
 {
 	Graphics graphics(hdc);
 	Pen      pen(color);
-		graphics.DrawLine(&pen, startPoint.get(0), startPoint.get(1), endPoint.get(0), endPoint.get(1));
+	graphics.DrawLine(&pen, startPoint.get(0), startPoint.get(1), endPoint.get(0), endPoint.get(1));
 }
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -284,16 +353,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 		switch (wParam)
 		{
 		case 87:
-			affins.move_on(0, -1);
+			affins.move_on(0, -5);
 			break;
 		case 83:
-			affins.move_on(0, 1);
+			affins.move_on(0, 5);
 			break;
 		case 65:
-			affins.move_on(-1, 0);
+			affins.move_on(-5, 0);
 			break;
 		case 68:
-			affins.move_on(1, 0);
+			affins.move_on(5, 0);
 			break;
 		case 81:
 			affins.rotate(1);
@@ -302,16 +371,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 			affins.rotate(-1);
 			break;
 		case 33:
-			affins.scaling(0.95, 1);
-			break;
-		case 34:
-			affins.scaling(1.05, 1);
-			break;
-		case 36:
 			affins.scaling(1, 0.95);
 			break;
-		case 35:
+		case 34:
 			affins.scaling(1, 1.05);
+			break;
+		case 36:
+			affins.scaling(0.95, 1);
+			break;
+		case 35:
+			affins.scaling(1.05, 1);
 			break;
 		default:
 			break;
