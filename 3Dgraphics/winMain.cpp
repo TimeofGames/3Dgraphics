@@ -188,18 +188,19 @@ public:
 	}
 };
 
-void print(HWND hWnd, Color color);
+void print(HWND, Color);
 
 VOID OnPaint(HDC hdc,point2D startPoint, point2D endPoint, Color color)
 {
 	Graphics graphics(hdc);
 	Pen      pen(color);
-	graphics.DrawLine(&pen, startPoint.get(0), startPoint.get(1), endPoint.get(0), endPoint.get(1));
+		graphics.DrawLine(&pen, startPoint.get(0), startPoint.get(1), endPoint.get(0), endPoint.get(1));
 }
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 point2DArray picture = point2DArray(15);
 int path[23] = { 0,1,0,2,0,3,4,3,5,3,6,7,6,8,6,9,10,9,11,9,12,13,14 };
+affinsMatrix2D affins;
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 {
@@ -276,14 +277,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 {
 	HDC          hdc;
 	PAINTSTRUCT  ps;
-	affinsMatrix2D affins;
+	
 	switch (message)
 	{
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
 		case 87:
-			affins.move_on(0,-1);
+			affins.move_on(0, -1);
 			break;
 		case 83:
 			affins.move_on(0, 1);
@@ -301,7 +302,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 			affins.rotate(-1);
 			break;
 		case 33:
-			affins.scaling(0.95,1);
+			affins.scaling(0.95, 1);
 			break;
 		case 34:
 			affins.scaling(1.05, 1);
