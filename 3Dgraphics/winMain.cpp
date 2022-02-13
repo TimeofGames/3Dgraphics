@@ -209,6 +209,7 @@ public:
 				}
 				result.add(localPoint);
 			}
+			result.setCenter(this->center);
 			return result;
 		case 2:
 
@@ -224,6 +225,7 @@ public:
 				}
 				result.add(localPoint);
 			}
+			result.setCenter(this->center);
 			return result;
 		default:
 			break;
@@ -245,6 +247,12 @@ public:
 	}
 	int getSize() {
 		return realSize;
+	}
+	void setCenter(point2D center) {
+		this->center = center;
+	}
+	point2D getCenter() {
+		return this->center;
 	}
 };
 
