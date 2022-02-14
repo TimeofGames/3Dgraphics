@@ -209,7 +209,7 @@ public:
 				}
 				result.add(localPoint);
 			}
-			result.setCenter(this->center);
+			result.setCenter(center);
 			return result;
 		case 2:
 
@@ -225,7 +225,7 @@ public:
 				}
 				result.add(localPoint);
 			}
-			result.setCenter(this->center);
+			result.setCenter(center);
 			return result;
 		default:
 			break;
@@ -253,6 +253,9 @@ public:
 	}
 	point2D getCenter() {
 		return this->center;
+	}
+	int getWidth() {
+		return xMax - xMin;
 	}
 };
 
@@ -367,16 +370,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 			affins.move_on(0, 5);
 			break;
 		case 65:
-			affins.move_on(-5, 0);
+			affins.move_on(- 2*picture.getWidth(), 0);
 			break;
 		case 68:
 			affins.move_on(5, 0);
 			break;
 		case 81:
-			affins.rotate(1);
+			affins.rotate(70);
 			break;
 		case 69:
-			affins.rotate(-1);
+			affins.rotate(-70);
 			break;
 		case 33:
 			affins.scaling(1, 0.95);
@@ -385,10 +388,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 			affins.scaling(1, 1.05);
 			break;
 		case 36:
-			affins.scaling(0.95, 1);
+			affins.scaling(0.25, 1);
 			break;
 		case 35:
-			affins.scaling(1.05, 1);
+			affins.scaling(4, 1);
 			break;
 		default:
 			break;
