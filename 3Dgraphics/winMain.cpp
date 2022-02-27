@@ -4,11 +4,13 @@
 #include <objidl.h>
 #include <gdiplus.h>
 #include <winbase.h>
+#include <winuser.h>
+#include <ctime>
 using namespace Gdiplus;
 #pragma comment (lib,"Gdiplus.lib")
 #define PI 3.14159265
-#define width 1080
-#define height 720
+#define WIDHT 900
+#define HEIGHT 506
 
 using namespace std;
 
@@ -268,7 +270,117 @@ public:
 	}
 };
 
-void print(HWND, Color);
+class background {
+private:
+	HBITMAP bg;
+	int error;
+public:
+	background() {
+		bg = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/Background.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+		error = GetLastError(); 
+	};
+	~background() {
+		DeleteObject(bg);
+	}
+	void printBackground(HDC hdc) {
+		HDC memdc = CreateCompatibleDC(hdc);
+		SelectObject(memdc, bg);
+		BitBlt(hdc, 0, 0, WIDHT, HEIGHT, memdc, 0, 0, SRCCOPY);
+	}
+};
+
+class sprite {
+private:
+	HBITMAP middleStage = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/middleStage.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	HBITMAP leftStage1 = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/leftStage1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	HBITMAP leftStage2 = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/leftStage2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	HBITMAP leftStage3 = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/leftStage3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	HBITMAP rightStage1 = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/rightStage1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	HBITMAP rightStage2 = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/rightStage2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	HBITMAP rightStage3 = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/rightStage3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	int stage;
+	bool direction;
+	int x = 300;
+	int y = 100;
+	int width = 288;
+	int height = 334;
+	HDC hdc;
+	HDC memdc;
+	
+	void delSprite() {
+		BitBlt(hdc, x, y, width, height, memdc, 0, 0, SRCINVERT);
+	}
+
+	void printSprite() {
+		BitBlt(hdc, x, y, width, height, memdc, 0, 0, SRCINVERT);
+	}
+	void nextStage() {
+		if (stage > 0 && stage < 6) {
+			if (direction) {
+				stage++;
+			}
+			else {
+				stage--;
+			}
+		}
+		else {
+			direction = !direction;
+			if (direction) {
+				stage++;
+			}
+			else {
+				stage--;
+			}
+		}
+	}
+
+	void setMEMDC() {
+		switch (stage)
+		{
+		case 0:
+			SelectObject(memdc, leftStage3);
+			break;
+		case 1:
+			SelectObject(memdc, leftStage2);
+			break;
+		case 2:
+			SelectObject(memdc, leftStage1);
+			break;
+		case 3:
+			SelectObject(memdc, middleStage);
+			break;
+		case 4:
+			SelectObject(memdc, rightStage1);
+			break;
+		case 5:
+			SelectObject(memdc, rightStage2);
+			break;
+		case 6:
+			SelectObject(memdc, rightStage3);
+			break;
+		default:
+			break;
+		}
+	}
+
+public:
+	sprite(HDC hdc, int startStage = 3, bool startDirection = false) {
+		stage = startStage;
+		direction = startDirection;
+		this->hdc = hdc;
+		memdc = CreateCompatibleDC(hdc);
+		setMEMDC();
+		printSprite();
+	}
+
+	void printNext() {
+		delSprite();
+		nextStage();
+		setMEMDC();
+		printSprite();
+	}
+
+};
 
 VOID OnPaint(HDC hdc,point2D startPoint, point2D endPoint, Color color)
 {
@@ -278,31 +390,9 @@ VOID OnPaint(HDC hdc,point2D startPoint, point2D endPoint, Color color)
 }
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-point2DArray picture = point2DArray(15);
-int path[23] = { 0,1,0,2,0,3,4,3,5,3,6,7,6,8,6,9,10,9,11,9,12,13,14 };
-affinsMatrix2D affins;
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 {
-	picture.add(point2D(width /2,100));
-	picture.add(point2D(width /2-25,125));
-	picture.add(point2D(width /2+25,125));
-	
-	picture.add(point2D(width / 2, 125));
-	picture.add(point2D(width / 2 - 50, 175));
-	picture.add(point2D(width / 2 + 50, 175));
-
-	picture.add(point2D(width / 2, 175));
-	picture.add(point2D(width / 2 - 75, 250));
-	picture.add(point2D(width / 2 + 75, 250));
-
-	picture.add(point2D(width / 2, 250));
-	picture.add(point2D(width / 2 - 100, 350));
-	picture.add(point2D(width / 2 + 100, 350));
-
-	picture.add(point2D(width / 2, 400));
-	picture.add(point2D(width / 2 - 50, 400));
-	picture.add(point2D(width / 2 + 50, 400));
 
 	HWND                hWnd;
 	MSG                 msg;
@@ -332,8 +422,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 		WS_OVERLAPPEDWINDOW,      // window style
 		CW_USEDEFAULT,            // initial x position
 		CW_USEDEFAULT,            // initial y position
-		width,					  // initial x size
-		height,					  // initial y size
+		WIDHT,					  // initial x size
+		HEIGHT,					  // initial y size
 		NULL,                     // parent window handle
 		NULL,                     // window menu handle
 		hInstance,                // program instance handle
@@ -342,10 +432,20 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 	ShowWindow(hWnd, iCmdShow);
 	UpdateWindow(hWnd);
 
+	background   bg;
+	bg.printBackground(GetDC(hWnd));
+	sprite sp = sprite(GetDC(hWnd));
+
+	long startTime = time(nullptr);
+
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
+		if (startTime != time(nullptr)) {
+			startTime = time(nullptr);
+			sp.printNext();
+		}
 	}
 
 	GdiplusShutdown(gdiplusToken);
@@ -355,53 +455,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 	WPARAM wParam, LPARAM lParam)
 {
-	HDC          hdc;
+	HDC          hdc = GetDC(hWnd);
 	PAINTSTRUCT  ps;
-	
 	switch (message)
 	{
-	case WM_KEYDOWN:
-		switch (wParam)
-		{
-		case 87:
-			affins.move_on(0, -5);
-			break;
-		case 83:
-			affins.move_on(0, 5);
-			break;
-		case 65:
-			affins.move_on(- 2*picture.getWidth(), 0);
-			break;
-		case 68:
-			affins.move_on(5, 0);
-			break;
-		case 81:
-			affins.rotate(70);
-			break;
-		case 69:
-			affins.rotate(-70);
-			break;
-		case 33:
-			affins.scaling(1, 0.95);
-			break;
-		case 34:
-			affins.scaling(1, 1.05);
-			break;
-		case 36:
-			affins.scaling(0.25, 1);
-			break;
-		case 35:
-			affins.scaling(4, 1);
-			break;
-		default:
-			break;
-		}
-		print(hWnd, Color(255, 255, 255, 255));
-		picture = picture * affins;
-		print(hWnd, Color(255, 0, 0, 0));
-		return 0;
 	case WM_PAINT:
-		print(hWnd, Color(255, 0, 0, 0));
 		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -409,12 +467,4 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
-}
-
-void print(HWND hWnd, Color color) {
-	HDC hdc = GetDC(hWnd);
-	for (int i = 0; i < 22; i++) {
-		OnPaint(hdc, picture.getPoint(path[i]), picture.getPoint(path[i + 1]), color);
-	}
-	ReleaseDC(hWnd, hdc);
 }
