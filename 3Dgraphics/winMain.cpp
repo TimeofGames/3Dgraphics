@@ -273,11 +273,9 @@ public:
 class background {
 private:
 	HBITMAP bg;
-	int error;
 public:
 	background() {
 		bg = (HBITMAP)LoadImageW(NULL, L"C:/Users/arseniy/source/repos/3Dgraphics/3Dgraphics/lab2Images/Background.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-		error = GetLastError(); 
 	};
 	~background() {
 		DeleteObject(bg);
@@ -315,22 +313,14 @@ private:
 		BitBlt(hdc, x, y, width, height, memdc, 0, 0, SRCINVERT);
 	}
 	void nextStage() {
-		if (stage > 0 && stage < 6) {
-			if (direction) {
-				stage++;
-			}
-			else {
-				stage--;
-			}
+		if (!(stage > 0 && stage < 6)) {
+			direction = !direction;
+		}
+		if (direction) {
+			stage++;
 		}
 		else {
-			direction = !direction;
-			if (direction) {
-				stage++;
-			}
-			else {
-				stage--;
-			}
+			stage--;
 		}
 	}
 
